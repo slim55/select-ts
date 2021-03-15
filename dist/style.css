@@ -1,0 +1,12 @@
+.select {
+  position: relative; }
+  .select__field {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    cursor: pointer; }
+  .select__dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%; }
