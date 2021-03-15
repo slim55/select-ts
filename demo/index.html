@@ -5,8 +5,37 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Custom Select</title>
+  <link rel="stylesheet" href="./../dist/style.css">
 </head>
 <body>
-  
+  <div style="width: 290px; margin: 0 auto;">
+    <div class="mselect -disabled">
+      <div class="mselect__field">
+        <div class="mselect__input">Choose an option</div>
+        <div class="mselect__arrow">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
+            <path d="M0 0h24v24H0V0z" fill="none"/>
+            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="mselect__dropdown">
+        <div class="mselect__option" data-value="1">Option 1</div>
+        <div class="mselect__option" data-value="2">Option 2</div>
+        <div class="mselect__option" data-value="3">Option 3</div>
+        <div class="mselect__option" data-value="4">Option 4</div>
+        <div class="mselect__option" data-value="5">Option 5</div>
+      </div>
+      <select>
+        <option value="" selected disabled>Choose an option</option>
+        <option value="1">Option 1</option>
+        <option value="1">Option 2</option>
+        <option value="1">Option 3</option>
+        <option value="1">Option 4</option>
+        <option value="1">Option 5</option>
+      </select>
+    </div>
+  </div>
+  <script src="./../dist/script.js"></script>
 </body>
 </html>
