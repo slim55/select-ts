@@ -1,14 +1,25 @@
 import './style.scss';
+import { toggleArrayItem } from './functions';
+
+interface MySelectOptions {
+  placeholder: string;
+}
 
 export default class MySelect {
   selector: string;
+
+  private options: MySelectOptions;
 
   private $select: HTMLSelectElement;
 
   private $container: HTMLElement;
 
-  constructor(selector: string) {
+  constructor(
+    selector: string,
+    options: MySelectOptions = { placeholder: 'Choose an options' }
+  ) {
     this.selector = selector;
+    this.options = options;
     this.$select = document.querySelector(this.selector);
     if (this.$select?.tagName.toLowerCase() === 'select') {
       this.init();
@@ -21,29 +32,38 @@ export default class MySelect {
     this.$select.outerHTML = this.getTemplate();
     this.$select = document.querySelector(this.selector);
     this.$container = this.$select.closest('[data-type="container"]');
+
     if (!this.$select.disabled) {
-      this.$container.addEventListener('click', this.clickHandler.bind(this));
-      document.addEventListener('click', this.documentClickHandler.bind(this));
+      this.$container.addEventListener('click', this.clickHandler);
+      document.addEventListener('click', this.documentClickHandler);
     }
   }
 
-  private clickHandler(event: Event): void {
+  private clickHandler = (event: Event): void => {
     const $target = event.target as HTMLElement;
     if ($target.closest('[data-type="field"]')) {
       this.toggle();
     } else if ($target.closest('[data-type="option"]')) {
-      const $option: HTMLElement = $target.closest('[data-type="option"]');
-      if (!$option.classList.contains('-disabled')) {
-        this.setValue($option.dataset.value);
-        this.close();
-      }
+      this.optionClickHandler($target.closest('[data-type="option"]'));
     }
-  }
+  };
 
-  private documentClickHandler(event: Event): void {
+  private documentClickHandler = (event: Event): void => {
     const $target = event.target as HTMLElement;
     if ($target.closest('[data-type="container"]') !== this.$container) {
       this.close();
+    }
+  };
+
+  private optionClickHandler($option: HTMLOptionElement) {
+    if (!$option.classList.contains('-disabled')) {
+      const currentValue = this.getValue();
+      if (this.$select.multiple && Array.isArray(currentValue)) {
+        this.setValue(toggleArrayItem(currentValue, $option.dataset.value));
+      } else {
+        this.setValue($option.dataset.value);
+        this.close();
+      }
     }
   }
 
@@ -91,7 +111,7 @@ export default class MySelect {
     this.$select
       .querySelectorAll('option')
       .forEach(($option: HTMLOptionElement, idx) => {
-        if (!$option.disabled || idx !== 0) {
+        if (!$option.disabled || idx !== 0 || this.$select.multiple) {
           const classOptionDisabled = $option.disabled ? ' -disabled' : '';
           const classOptionSelected = $option.selected ? ' -selected' : '';
           const addOptionClasses = classOptionDisabled + classOptionSelected;
@@ -113,50 +133,86 @@ export default class MySelect {
     let selectedOptionsText = '';
 
     this.$select
-      .querySelectorAll('option')
+      .querySelectorAll('option[selected]')
       .forEach(($option: HTMLOptionElement) => {
-        if ($option.selected) {
-          selectedOptionsText += selectedOptionsText
-            ? `, ${$option.textContent}`
-            : $option.textContent;
-        }
+        selectedOptionsText += selectedOptionsText
+          ? `, ${$option.textContent}`
+          : $option.textContent;
       });
+
+    if (!selectedOptionsText) {
+      selectedOptionsText = this.options.placeholder;
+    }
 
     return `<div class="mselect__input" data-type="input">${selectedOptionsText}</div>`;
   }
 
   setValue(value: string | Array<string>): void {
-    let selectedOptionsText = '';
+    let inputText = '';
 
-    if (typeof value === 'string') {
-      this.$select.value = value;
-    } else {
-      this.$select.value = value.join(',');
-    }
+    this.$select
+      .querySelectorAll('option')
+      .forEach(($option: HTMLOptionElement) => {
+        if (typeof value === 'string') {
+          $option.selected = $option.value === value;
+          if ($option.value === value) {
+            inputText = $option.textContent;
+          }
+        } else {
+          $option.selected = value.indexOf($option.value) !== -1;
+          if (value.indexOf($option.value) !== -1) {
+            inputText += inputText
+              ? `, ${$option.textContent}`
+              : $option.textContent;
+          }
+        }
+      });
 
     this.$container
       .querySelectorAll('[data-type="option"]')
       .forEach(($option: HTMLElement) => {
-        $option.classList.remove('-selected');
         if (typeof value === 'string') {
           if ($option.dataset.value === value) {
             $option.classList.add('-selected');
-            selectedOptionsText = $option.textContent;
+          } else {
+            $option.classList.remove('-selected');
           }
         } else if (value.indexOf($option.dataset.value) !== -1) {
           $option.classList.add('-selected');
-          selectedOptionsText = selectedOptionsText
-            ? `, ${$option.textContent}`
-            : $option.textContent;
+        } else {
+          $option.classList.remove('-selected');
         }
       });
 
+    if (!inputText) {
+      inputText = this.options.placeholder;
+    }
+
     this.$container.querySelector(
       '[data-type="input"]'
-    ).textContent = selectedOptionsText;
+    ).textContent = inputText;
   }
 
   getValue(): string | Array<string> {
+    if (this.$select.multiple) {
+      const selectValue: Array<string> = [];
+      this.$container
+        .querySelectorAll('option')
+        .forEach(($option: HTMLOptionElement) => {
+          if ($option.selected) {
+            selectValue.push($option.value);
+          }
+        });
+      return selectValue;
+    }
     return this.$select.value;
   }
+
+  destroy(): void {
+    this.$container.outerHTML = this.$select.outerHTML;
+    this.$container.removeEventListener('click', this.clickHandler);
+    document.removeEventListener('click', this.documentClickHandler);
+  }
 }
+
+const select = new MySelect('#select');

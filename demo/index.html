@@ -9,8 +9,8 @@
 </head>
 <body>
   <div style="width: 290px; margin: 0 auto;">
-    <select id="select">
-      <option value="" selected disabled>Choose an option</option>
+    <select id="select" multiple>
+      <option value="" disabled>Choose an option</option>
       <option value="1">Option 1</option>
       <option value="2" disabled>Option 2</option>
       <option value="3">Option 3</option>
@@ -19,8 +19,5 @@
     </select>
   </div>
   <script src="./../dist/script.js"></script>
-  <script>
-    var select = new MySelect('#select');
-  </script>
 </body>
 </html>
