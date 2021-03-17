@@ -11,7 +11,7 @@ const configOptions = [
     input: 'src/script.ts',
     output: [{
       file: 'dist/script.js',
-      format: 'iife',
+      format: 'cjs',
     }],
     plugins: [
       eslint({
