@@ -25,4 +25,7 @@ module.exports = {
     '**/*.scss',
     '**/*.css',
   ],
+  rules: {
+    'no-param-reassign': ['error', { 'props': false }],
+  }
 };
