@@ -97,6 +97,9 @@
     .mselect__option.-selected {
       color: #fff;
       background-color: #5454ff; }
+    .mselect__option.-disabled {
+      opacity: .5;
+      cursor: not-allowed; }
   .mselect select {
     position: absolute;
     top: 0;

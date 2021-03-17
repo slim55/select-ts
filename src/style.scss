@@ -92,6 +92,11 @@ $mselect-option-padding: 0 20px;
       color: #fff;
       background-color: #5454ff;
     }
+
+    &.-disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
   }
 
   select {
