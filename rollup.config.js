@@ -2,9 +2,12 @@ import nodeResolve from 'rollup-plugin-node-resolve';
 import commonJs from 'rollup-plugin-commonjs';
 import typescript from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
+import { terser } from 'rollup-plugin-terser';
 import postcss from 'rollup-plugin-postcss';
 import autoprefixer from 'autoprefixer';
 import stylelint from 'rollup-plugin-stylelint';
+
+const IS_PROD = process.env.BUILD === 'production';
 
 const configOptions = [
   {
@@ -18,9 +21,14 @@ const configOptions = [
       eslint({
         fix: true,
       }),
+      typescript(),
       nodeResolve(),
       commonJs(),
-      typescript(),
+      IS_PROD && terser({
+        output: {
+          comments: false,
+        },
+      }),
       stylelint({}),
       postcss({
         extract: 'style.css',
@@ -28,7 +36,8 @@ const configOptions = [
         use: ['sass'],
         plugins: [
           autoprefixer(),
-        ]
+        ],
+        minimize: IS_PROD,
       }),
     ],
   },
