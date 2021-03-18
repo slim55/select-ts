@@ -12,6 +12,7 @@ const configOptions = [
     output: [{
       file: 'dist/script.js',
       format: 'iife',
+      name: 'MySelect',
     }],
     plugins: [
       eslint({
