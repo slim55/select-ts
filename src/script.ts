@@ -1,5 +1,5 @@
 import './style.scss';
-import { toggleArrayItem } from './functions';
+import { toggleArrayItem, checkMobileDevice } from './functions';
 
 interface MySelectOptions {
   placeholder: string;
@@ -14,6 +14,16 @@ export default class MySelect {
 
   private $container: HTMLElement;
 
+  private $dropdown: HTMLElement;
+
+  private $input: HTMLElement;
+
+  private eventChange: Event;
+
+  private eventDestroy: Event;
+
+  private isMobile: boolean;
+
   constructor(
     selector: string,
     options: MySelectOptions = { placeholder: 'Choose an options' }
@@ -21,6 +31,10 @@ export default class MySelect {
     this.selector = selector;
     this.options = options;
     this.$select = document.querySelector(this.selector);
+    this.eventChange = new Event('change');
+    this.eventDestroy = new Event('destroy');
+    this.isMobile = checkMobileDevice();
+
     if (this.$select?.tagName.toLowerCase() === 'select') {
       this.init();
     } else {
@@ -28,14 +42,99 @@ export default class MySelect {
     }
   }
 
+  open(): void {
+    this.$container.classList.add('-open');
+  }
+
+  close(): void {
+    this.$container.classList.remove('-open');
+  }
+
+  toggle(): void {
+    this.$container.classList.toggle('-open');
+  }
+
+  setValue(value: string | Array<string>): void {
+    this.$select
+      .querySelectorAll('option')
+      .forEach(($option: HTMLOptionElement) => {
+        if (typeof value === 'string') {
+          $option.selected = $option.value === value;
+        } else {
+          $option.selected = value.indexOf($option.value) !== -1;
+        }
+      });
+
+    if (!this.isMobile) {
+      this.$container
+        .querySelectorAll('[data-type="option"]')
+        .forEach(($option: HTMLElement) => {
+          if (typeof value === 'string') {
+            if ($option.dataset.value === value) {
+              $option.classList.add('-selected');
+            } else {
+              $option.classList.remove('-selected');
+            }
+          } else if (value.indexOf($option.dataset.value) !== -1) {
+            $option.classList.add('-selected');
+          } else {
+            $option.classList.remove('-selected');
+          }
+        });
+    }
+
+    this.$input.textContent = this.getInputText();
+    this.$select.dispatchEvent(this.eventChange);
+  }
+
+  getValue(): string | Array<string> {
+    if (this.$select.multiple) {
+      const selectValue: Array<string> = [];
+      this.$container
+        .querySelectorAll('option')
+        .forEach(($option: HTMLOptionElement) => {
+          if ($option.selected) {
+            selectValue.push($option.value);
+          }
+        });
+      return selectValue;
+    }
+    return this.$select.value;
+  }
+
+  destroy(): void {
+    this.$container.outerHTML = this.$select.outerHTML;
+    this.$container.removeEventListener('click', this.clickHandler);
+    document.removeEventListener('click', this.documentClickHandler);
+    this.$select.removeEventListener('change', this.selectChangeHandler);
+    this.$select.dispatchEvent(this.eventDestroy);
+  }
+
+  refresh(): void {
+    if (this.$select.disabled) {
+      this.$container.classList.add('-disabled');
+    } else {
+      this.$container.classList.remove('-disabled');
+    }
+
+    if (!this.isMobile) {
+      this.$dropdown.innerHTML = this.getDropdownOptionsHtml();
+    }
+
+    this.$input.textContent = this.getInputText();
+  }
+
   private init(): void {
     this.$select.outerHTML = this.getTemplate();
     this.$select = document.querySelector(this.selector);
     this.$container = this.$select.closest('[data-type="container"]');
+    this.$input = this.$container.querySelector('[data-type="input"]');
+    this.$dropdown = this.$container.querySelector('[data-type="dropdown"]');
 
     if (!this.$select.disabled) {
       this.$container.addEventListener('click', this.clickHandler);
       document.addEventListener('click', this.documentClickHandler);
+      this.$select.addEventListener('change', this.selectChangeHandler);
     }
   }
 
@@ -67,28 +166,23 @@ export default class MySelect {
     }
   }
 
-  open(): void {
-    this.$container.classList.add('-open');
-  }
-
-  close(): void {
-    this.$container.classList.remove('-open');
-  }
-
-  toggle(): void {
-    this.$container.classList.toggle('-open');
-  }
+  private selectChangeHandler = (): void => {
+    this.$input.textContent = this.getInputText();
+  };
 
   private getTemplate(): string {
     const classContainerDisabled: string = this.$select.disabled
       ? ' -disabled'
       : '';
+    const classContainerMobile: string = this.isMobile ? ' -mobile' : '';
     const selectHtml: string = this.$select.outerHTML;
-    const dropdownOptionsHtml = this.getDropdownOptionsHtml();
+    const dropdownOptionsHtml = !this.isMobile
+      ? this.getDropdownOptionsHtml()
+      : '';
     const inputHtml = this.getInputHtml();
 
     return `
-      <div class="mselect${classContainerDisabled}" data-type="container">
+      <div class="mselect${classContainerDisabled}${classContainerMobile}" data-type="container">
         <div class="mselect__field" data-type="field">
           ${inputHtml}
           <div class="mselect__arrow">
@@ -130,89 +224,26 @@ export default class MySelect {
   }
 
   private getInputHtml(): string {
-    let selectedOptionsText = '';
-
-    this.$select
-      .querySelectorAll('option[selected]')
-      .forEach(($option: HTMLOptionElement) => {
-        selectedOptionsText += selectedOptionsText
-          ? `, ${$option.textContent}`
-          : $option.textContent;
-      });
-
-    if (!selectedOptionsText) {
-      selectedOptionsText = this.options.placeholder;
-    }
-
+    const selectedOptionsText = this.getInputText();
     return `<div class="mselect__input" data-type="input">${selectedOptionsText}</div>`;
   }
 
-  setValue(value: string | Array<string>): void {
+  private getInputText(): string {
     let inputText = '';
-
     this.$select
       .querySelectorAll('option')
       .forEach(($option: HTMLOptionElement) => {
-        if (typeof value === 'string') {
-          $option.selected = $option.value === value;
-          if ($option.value === value) {
-            inputText = $option.textContent;
-          }
-        } else {
-          $option.selected = value.indexOf($option.value) !== -1;
-          if (value.indexOf($option.value) !== -1) {
-            inputText += inputText
-              ? `, ${$option.textContent}`
-              : $option.textContent;
-          }
+        if ($option.selected) {
+          inputText += inputText
+            ? `, ${$option.textContent}`
+            : $option.textContent;
         }
       });
 
-    this.$container
-      .querySelectorAll('[data-type="option"]')
-      .forEach(($option: HTMLElement) => {
-        if (typeof value === 'string') {
-          if ($option.dataset.value === value) {
-            $option.classList.add('-selected');
-          } else {
-            $option.classList.remove('-selected');
-          }
-        } else if (value.indexOf($option.dataset.value) !== -1) {
-          $option.classList.add('-selected');
-        } else {
-          $option.classList.remove('-selected');
-        }
-      });
-
-    if (!inputText) {
+    if (!inputText && this.$select.multiple) {
       inputText = this.options.placeholder;
     }
 
-    this.$container.querySelector(
-      '[data-type="input"]'
-    ).textContent = inputText;
-  }
-
-  getValue(): string | Array<string> {
-    if (this.$select.multiple) {
-      const selectValue: Array<string> = [];
-      this.$container
-        .querySelectorAll('option')
-        .forEach(($option: HTMLOptionElement) => {
-          if ($option.selected) {
-            selectValue.push($option.value);
-          }
-        });
-      return selectValue;
-    }
-    return this.$select.value;
-  }
-
-  destroy(): void {
-    this.$container.outerHTML = this.$select.outerHTML;
-    this.$container.removeEventListener('click', this.clickHandler);
-    document.removeEventListener('click', this.documentClickHandler);
+    return inputText;
   }
 }
-
-const select = new MySelect('#select');

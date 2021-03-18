@@ -19,5 +19,16 @@
     </select>
   </div>
   <script src="./../dist/script.js"></script>
+  <script>
+    var select = new MySelect('#select');
+    var $select = document.querySelector('#select');
+    
+    $select.addEventListener('change', function() {
+      console.log('change');
+    });
+    $select.addEventListener('destroy', function() {
+      console.log('destroy');
+    });
+  </script>
 </body>
 </html>
