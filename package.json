@@ -2,7 +2,7 @@
   "name": "custom-select",
   "version": "0.0.1",
   "description": "JavaScript library for custom select",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "npx rollup --config",
     "watch": "npx rollup --config --watch",
